@@ -1,0 +1,2 @@
+# Huffman_Encoding
+COSC3360_Assigment1
