@@ -1,8 +1,10 @@
 #include <iostream>
 #include<vector>
+//#include<stdio.h>
 #include<fstream>
 #include <algorithm>
-#include <string>
+#include <string.h>
+#include<cstring>
 #include<unistd.h>
 #include<sys/types.h>
 #include<sstream>
@@ -10,33 +12,40 @@
 //#include <bits/stdc++.h>
 using namespace std;
 void childProcess(char character, vector<int> frequencies, string line);
-int main(int argc, char**argv) {
+int encodingFile(string fileName);
+int main(int argc, char*argv[]) {
 
 	//vector<vector<char>> presentSymbols(256,vector<char>(2,'NULL'));
+	cout << argc << argv[1];
+	string inputFileName = argv[1];
+	if (argc > 0) {
+		encodingFile(inputFileName);
+	}
+	return 0;
+	}
+
+int encodingFile(string fileName) {
+
 	vector<int> symbolFrequency(256, 0);
-	
-	string fileName = "";
-	cin >> fileName;
-	ifstream inputFile;
-	inputFile.open(fileName);
+	ifstream inputFile(fileName);
 	//ifstream inputFile(argv[1], ios::in);
 	//ofstream outputFile(argv[2], ios::out);
 	if (inputFile.is_open()) {
-		
+
 		string line;
 		//while (getline(inputFile,line)) {
-			getline(inputFile, line);
-			cout << line<<endl;
-			for (int i = 0; i < line.length();i++) {
-				symbolFrequency[line[i]]++;
-			}//end for
-			vector<int> presentSymbols;
-			for (int i = 0; i < symbolFrequency.size();i++) {
-				if (symbolFrequency[i] != 0) {
-					presentSymbols.push_back(i);
-				}//end if
-			}//end for
-			for (char a : presentSymbols) {
+		getline(inputFile, line);
+		cout << line << endl;
+		for (int i = 0; i < line.length();i++) {
+			symbolFrequency[line[i]]++;
+		}//end for
+		vector<int> presentSymbols;
+		for (int i = 0; i < symbolFrequency.size();i++) {
+			if (symbolFrequency[i] != 0) {
+				presentSymbols.push_back(i);
+			}//end if
+		}//end for
+		for (char a : presentSymbols) {
 			//cout << a;
 		}
 		cout << "This is parent " << getpid() << endl;
@@ -52,16 +61,16 @@ int main(int argc, char**argv) {
 				i = presentSymbols.size();
 			}
 		}//end for
-	
+
 
 	}
 	else {
 		cout << "Cannot open file!";
+		return 0;
 	}
 	inputFile.close();
-	return 0;
-	}
-
+	return 1;
+}
 void childProcess(char c, vector<int> symbolFrequency, string line) {
 
 	stringstream ss;
@@ -72,7 +81,7 @@ void childProcess(char c, vector<int> symbolFrequency, string line) {
 
 	string decodeBits;
 	cout << "char =" << c << endl;
-	cout << "line " << line << endl;
+	//cout << "line " << line << endl;
 	for (int i = 0; i < line.length();i++) {
 		if (c == line[i]) {
 			//cout << " 1";
