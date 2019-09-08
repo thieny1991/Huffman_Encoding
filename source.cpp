@@ -2,196 +2,176 @@
 #include<vector>
 //#include<stdio.h>
 #include<fstream>
-#include <algorithm>
 #include <string.h>
+#include<sstream>
 #include<cstring>
 #include<unistd.h>
 #include<sys/types.h>
+#include<sys/wait.h>
 #include<sstream>
-
+#include<queue>
 //#include <bits/stdc++.h>
 using namespace std;
-void childProcess(char character, vector<int> frequencies, string line);
+void childProcess(char c, vector<char>cStr, string outfileName);
 int encodingFile(string fileName);
-int main(int argc, char*argv[]) {
+void printVector(vector<char>cStr);
+void printFrequencies(vector<int>f,vector<int>c);
+void removeAllChar(char c, vector<char>&str);
+vector<int> getSortedAsciiListByFrequencies(vector<int> symbolFrequencyList);
+bool readInputFile(const char* inputFile, vector<char>&cStr, vector<int> &symbolFrequeny);
 
-	//vector<vector<char>> presentSymbols(256,vector<char>(2,'NULL'));
-	cout << argc << argv[1];
+//ENTRY TO PROGRAM
+int main(int argc, char*argv[]) {
 	string inputFileName = argv[1];
+	vector<char> str;
 	if (argc > 0) {
 		encodingFile(inputFileName);
 	}
 	return 0;
 	}
 
-int encodingFile(string fileName) {
-
-	vector<int> symbolFrequency(256, 0);
-	ifstream inputFile(fileName);
-	//ifstream inputFile(argv[1], ios::in);
-	//ofstream outputFile(argv[2], ios::out);
-	if (inputFile.is_open()) {
-
-		string line;
-		//while (getline(inputFile,line)) {
-		getline(inputFile, line);
-		cout << line << endl;
-		for (int i = 0; i < line.length();i++) {
-			symbolFrequency[line[i]]++;
-		}//end for
-		vector<int> presentSymbols;
-		for (int i = 0; i < symbolFrequency.size();i++) {
-			if (symbolFrequency[i] != 0) {
-				presentSymbols.push_back(i);
-			}//end if
-		}//end for
-		for (char a : presentSymbols) {
-			//cout << a;
-		}
-		cout << "This is parent " << getpid() << endl;
-		pid_t pid;
-		for (int i = 0; i < presentSymbols.size();i++) {
-			pid = fork();
-			//if the child processor was created successfully
-			if (pid == 0) {
-				cout << "This is child " << getpid();
-				cout << " ascii value =" << presentSymbols[i] << endl;
-				childProcess(presentSymbols[i], symbolFrequency, line);
-				//change values of i to get out of this for loop in the child process
-				i = presentSymbols.size();
+bool readInputFile(const char* inputFile, vector<char>&cStr,vector<int> &symbolFrequeny) {
+	ifstream ifs(inputFile);
+	stringstream  ss;
+	char av;
+	if (ifs.is_open()) {
+		while (ifs.get(av)) {
+			
+			cStr.push_back(av);
+			if (av == '\n' || av == '\r')
+				continue;
+			else {
+				symbolFrequeny[av] += 1;
 			}
-		}//end for
-
-
+		}
+		return 1;
 	}
 	else {
-		cout << "Cannot open file!";
+		cout << "Error in opening file" << endl;
 		return 0;
 	}
-	inputFile.close();
-	return 1;
-}
-void childProcess(char c, vector<int> symbolFrequency, string line) {
-
-	stringstream ss;
-	ss << c;
-	string outFileName;
-	ss >> outFileName;
-	outFileName.append(".txt");
-
-	string decodeBits;
-	cout << "char =" << c << endl;
-	//cout << "line " << line << endl;
-	for (int i = 0; i < line.length();i++) {
-		if (c == line[i]) {
-			//cout << " 1";
-			decodeBits.append("1");
-		}
-		else if (symbolFrequency[c] > symbolFrequency[line[i]])
-		{
-			//cout << "0";
-			decodeBits.append("0");
-		}
-		else if (symbolFrequency[c] == symbolFrequency[line[i]]
-			&& (c<line[i])) {
-			decodeBits.append("0");
-		}
-	}
-	ofstream outFile;
-	cout << "outFile =" + outFileName;
-	cout << " Bits " << decodeBits << endl;
-	outFile.open(outFileName.c_str());
-	outFile << decodeBits;
-	outFile.close();
 }
 
-
-		//sorted presentSymbols by frequency
-		/*vector<char> presentSymbols;
-		for (int i = 0;i < symbolFrequency.size();i++) {
-			if (symbolFrequency[i] != 0) {
-				if(presentSymbols.empty())
-					presentSymbols.push_back(i);
-				else {
-					int size = presentSymbols.size();
-					for (int k=0; k < size;k++) {
-						if (symbolFrequency[i] > symbolFrequency[presentSymbols[k]]) {
-							presentSymbols.insert(presentSymbols.begin()+k,static_cast<char>(i));
-							break;
-
-						}
-						else if (symbolFrequency[i] == symbolFrequency[presentSymbols[k]]) {
-							presentSymbols.insert(presentSymbols.begin()+k+1, static_cast<char>(i));
-							break;
-						//symbolFrequency already in order, hen if frequency(i)=frequency(presentSymbols[k])
-							//i is always larger than presentSymbols[k]
-						}
-						else if (symbolFrequency[i] < symbolFrequency[presentSymbols.back()]) {
-							presentSymbols.push_back(i);
-						}
-					}
-				}
-			}
-		}
-		for (char a : presentSymbols) {
-			//cout << a;
-		}
-		//sort presentSymbols
-		cout << "This is parent " << getpid() << endl;
+int encodingFile(string fileName) {
+	vector<char>cStr;
+	vector<int> symbolFrequencyList(256, 0);
+	vector<int> sortedAsciiByFrequency;
+	if (readInputFile(fileName.c_str(), cStr, symbolFrequencyList)) {
+		sortedAsciiByFrequency = getSortedAsciiListByFrequencies(symbolFrequencyList);
+		printFrequencies(sortedAsciiByFrequency,symbolFrequencyList);
+		//cout << "This is parent " << getpid() << endl;
 		pid_t pid;
-		static int n =presentSymbols.size();
-		for (int i = 0; i < presentSymbols.size();i++) {
+		char charToBeDecoded;
+		static int n = sortedAsciiByFrequency.size();
+		cout << "Original Message:\t";
+		printVector(cStr);
+		for (int i = 0; i < sortedAsciiByFrequency.size();i++) {
+			stringstream ss;
+			charToBeDecoded=static_cast<char>(sortedAsciiByFrequency[i]);
+			ss << charToBeDecoded;
+			string fileName="";
+			ss >> fileName;
+			fileName.append(".txt");
 			pid = fork();
 			if (pid == 0) {
-				cout << "This is child " << getpid() << endl;
-				childProcess(i, symbolFrequency, presentSymbols, line);
-				i = presentSymbols.size();
+				//cout << "This is child " << getpid() << endl;
+				childProcess(charToBeDecoded, cStr, fileName);
+				exit(0);
 			}
+			else{
+				removeAllChar(charToBeDecoded, cStr);
+			}
+			//blocks the calling process until one of its child process exits or a signal is received
+			wait(NULL);
+			ifstream inputFile(fileName);
+			string decodeBits;
+			if (inputFile.is_open()) {
+				getline(inputFile, decodeBits);
+				cout <<"Symbol "<<charToBeDecoded<<" code:\t"<<decodeBits << endl;
+			}
+			if (i<(sortedAsciiByFrequency.size() - 1))
+				cout << "Remaining Message:\t";
+			printVector(cStr);
+			inputFile.close();
 		}
-	
-
 	}
-
-	else {
-		cout << "Cannot open file!";
+}
+void removeAllChar(char c, vector<char>&str) {
+	for (int i = 0;i < str.size();i++) {
+		if (str[i] == c) {
+			str.erase(str.begin() + i);
+			--i;
+		}
 	}
-	inputFile.close();
-	//system("PAUSE");
-	return 0;
+}
+void printVector(vector<char> cStr) {
+	for (int i = 0; i < cStr.size();i++) {
+		cout << cStr[i];
+	}
+	cout << endl;
+}//end printVectorChar
+
+void printFrequencies(vector<int> f, vector<int> c) {
+	for (int i = 0; i < f.size();i++) {
+		if (f[i] != 0)
+			cout << static_cast<char>(f[i]) << " frequency = " << c[f[i]] << endl;
+	}
+}//end printVectorChar
+
+vector<int> getSortedAsciiListByFrequencies(vector<int> symbolFrequencyList) {
+	vector<int> presentSymbols;
+	int  f1 = 0, f2 = 0,ascii1, ascii2 = 0;
+	for ( ascii1 = 0;ascii1 < symbolFrequencyList.size();ascii1++) {
+		f1 = symbolFrequencyList[ascii1];
+		if (f1 != 0) {
+			if (presentSymbols.empty())
+				presentSymbols.push_back(ascii1);
+			else {
+				int size = presentSymbols.size();
+				for (int k = 0; k < size;k++) {
+					ascii2 = presentSymbols[k];
+					f2 = symbolFrequencyList[ascii2];
+					if (f1 > f2) {
+						presentSymbols.insert(presentSymbols.begin() + k, ascii1);
+						break;
+					}//end if
+					//if f1 is smallest, push to the end 
+					else if (f1 <= symbolFrequencyList[presentSymbols.back()]
+						&&ascii1!=presentSymbols.back()) {
+						presentSymbols.push_back(ascii1);
+					}//end for
+				}//end else
+			}//end 
+		}//end if
+	}//end for
+	return presentSymbols;
 }
 
-void childProcess(int n, vector<int> symbolFrequency, vector<char> presentSymbols,string line) {
-	
-	stringstream ss;
-	ss << presentSymbols[n];
-	string outFileName;
-	ss >> outFileName;
-	outFileName.append(".txt");
-	
+
+/**This method receive a character, symbol frequency, and a string and encode the character
+*	into a string bits, then write out the result to a c.txt file
+*@param: char c, vector<int> frequencies, string
+*@return: void
+*/
+
+void childProcess(char c, vector<char>str, string outFileName) {
+
 	string decodeBits;
-	cout << "n =" << n << endl;
-	cout << "line " << line << endl;
-	for (int i = 0; i < line.length();i++) {
-		if (presentSymbols[n] == line[i]) {
-			//cout << " 1";
+	for (int i = 0; i < str.size();i++) {
+		if (c == str[i]) {
 			decodeBits.append("1");
 		}
-		else if (symbolFrequency[presentSymbols[n]] > symbolFrequency[line[i]])
-		{
-			//cout << "0";
-			decodeBits.append("0");
+		else if (str[i]=='\r'||str[i]=='\n'){
+			continue;
 		}
-		else if (symbolFrequency[presentSymbols[n]] == symbolFrequency[line[i]]
-			&&(presentSymbols[n]<line[i])) {
+		else {
 			decodeBits.append("0");
 		}
 	}
 	ofstream outFile;
-	cout << "outFile =" + outFileName;
-	cout << " Bits " << decodeBits << endl;
+	//cout << "outFile =" + outFileName;
+	//cout << " Bits " << decodeBits << endl;
 	outFile.open(outFileName.c_str());
 	outFile << decodeBits;
 	outFile.close();
 }
-*/
-//vector<int> decompress()
